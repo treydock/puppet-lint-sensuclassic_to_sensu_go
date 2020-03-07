@@ -4,14 +4,17 @@ class test {
     ensure => 'present',
   }
 
+  $contact = 'foo'
+
   sensuclassic::check { 'check_cpu':
     ensure              => present,
     command             => '/opt/sensu/embedded/bin/check-cpu.rb',
     type                => 'foo',
     standalone          => true,
-    contacts            => ['foo@bar','foo@baz'],
+    contacts            => ['foo@bar','foo@baz', $contact, "${contact}@domain"],
     custom              => {
       'foo' => 'bar',
+      'bar' => $baz,
     },
     handlers            => ['foo','bar'],
     cron                => '0 0 * * *',

@@ -12,7 +12,7 @@ describe 'sensuclassic_check' do
       end
 
       it 'should create a warning' do
-        expect(problems).to contain_warning(msg).on_line(7).in_column(3)
+        expect(problems).to contain_warning(msg).on_line(9).in_column(3)
       end
     end
   end
@@ -32,7 +32,7 @@ describe 'sensuclassic_check' do
       end
 
       it 'should fix the problem' do
-        expect(problems).to contain_fixed(msg).on_line(7).in_column(3)
+        expect(problems).to contain_fixed(msg).on_line(9).in_column(3)
       end
 
       it 'should add a newline to the end of the manifest' do
