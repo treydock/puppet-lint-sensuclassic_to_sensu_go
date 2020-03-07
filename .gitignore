@@ -1,0 +1,24 @@
+# Vim
+*.swp
+
+# OS X
+.DS_Store
+
+# Ruby
+Gemfile.lock
+
+/.envrc
+
+# Gem
+/.bundle/
+/.yardoc
+/Gemfile.lock
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+
+# rspec failure tracking
+.rspec_status
