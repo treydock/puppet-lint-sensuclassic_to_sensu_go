@@ -1,0 +1,9 @@
+language: ruby
+cache: bundler
+script:
+- bundle exec rake validate spec rubocop build
+rvm:
+- 2.4.5
+- 2.5.7
+matrix:
+  fast_finish: true

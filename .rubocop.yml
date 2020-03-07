@@ -1,0 +1,18 @@
+---
+require:
+- rubocop-rspec
+
+AllCops:
+  DisplayCopNames: true
+  TargetRubyVersion: '2.5'
+  Include:
+  - "./**/*.rb"
+  Exclude:
+  - bin/*
+  - ".vendor/**/*"
+  - "**/Gemfile"
+  - "**/Rakefile"
+  - "vendor/**/*"
+
+Naming/HeredocDelimiterNaming:
+  Enabled: false
