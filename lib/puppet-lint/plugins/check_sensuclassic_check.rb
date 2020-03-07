@@ -4,6 +4,16 @@ PuppetLint.new_check(:sensuclassic_check) do
     'contacts'  => nil,
     'standalone'  => 'delete',
     'type'      => 'delete',
+    'occurrences' => 'delete',
+    'refresh' => 'delete',
+    'source'  => 'delete',
+    'aggregate' => 'delete',
+    'aggregates' => 'delete',
+    'handle'  => 'delete',
+    'dependencies' => 'delete',
+    'content' => 'delete',
+    'ttl_status' => 'delete',
+    'auto_resolve'  => 'delete',
   }
 
   def check
@@ -60,10 +70,50 @@ PuppetLint.new_check(:sensuclassic_check) do
       else
         problem[:token].value = CHECK_PARAMS[problem[:token].value]
       end
-    elsif CHECK_PARAMS.key?(problem[:token].value) && CHECK_PARAMS[problem[:token].value] == 'contacts'
-      resource_indexes.each do |r|
-        puts r
+    elsif problem[:token].value == 'contacts'
+      contacts = []
+      contact = false
+      problem[:tokens].each do |t|
+        if t.type == :NAME && t.value == 'contacts'
+          contact = true
+          next
+        end
+        if contact && t.type == :RBRACK
+          break
+        end
+        if contact && t.type == :SSTRING
+          contacts << t.value
+        end
       end
+      # Remove contacts line
+      problem[:tokens].each do |t|
+        if t.line == problem[:token].line
+          remove_token(t)
+        end
+      end
+      index = 0
+      indent = ''
+      labels = false
+      problem[:tokens].each do |t|
+        if t.type == :NAME && ['labels','custom'].include?(t.value)
+          labels = true
+        end
+        if labels && t.type == :RBRACE
+          break
+        end
+        if labels && t.type == :LBRACE
+          index = tokens.index(t.next_token)
+          indent = t.next_token.next_token.value
+        end
+      end
+      add_token(index, PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0))
+      add_token(index, PuppetLint::Lexer::Token.new(:SSTRING, contacts.join(', '), 0, 0))
+      add_token(index, PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0))
+      add_token(index, PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0))
+      add_token(index, PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0))
+      add_token(index, PuppetLint::Lexer::Token.new(:SSTRING, 'contacts', 0, 0))
+      add_token(index, PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0))
+      add_token(index, PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0))
     end
     problem[:token].raw = problem[:token].value unless problem[:token].raw.nil?
   end
