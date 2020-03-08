@@ -104,56 +104,15 @@ PuppetLint.new_check(:sensuclassic_check) do
           remove_token(t)
         end
       end
-      index = 0
-      indent = ''
-      labels = false
-      problem[:tokens].each do |t|
-        if t.type == :NAME && ['labels','custom'].include?(t.value)
-          labels = true
-        end
-        if labels && t.type == :RBRACE
-          break
-        end
-        if labels && t.type == :LBRACE
-          index = tokens.index(t.next_token)
-          indent = t.next_token.next_token.value
-        end
-      end
-      if !labels
-        indent = problem[:tokens].last.prev_token.value + '  '
-        index = tokens.index(problem[:tokens].last.prev_token)
-        labels_tokens = [
-          PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
-          PuppetLint::Lexer::Token.new(:NAME, 'labels', 0, 0),
-          PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
-          PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
-          PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
-          PuppetLint::Lexer::Token.new(:LBRACE, '{', 0, 0),
-          PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
-          PuppetLint::Lexer::Token.new(:INDENT, indent + '  ', 0, 0),
-        ]
-      else
-        labels_tokens = [
-          PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
-          PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
-        ]
-      end
-      labels_tokens << PuppetLint::Lexer::Token.new(:SSTRING, 'contacts', 0, 0)
-      labels_tokens << PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0)
-      labels_tokens << PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0)
-      labels_tokens << PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0)
-      labels_tokens << PuppetLint::Lexer::Token.new(contacts_type, contacts, 0, 0)
-      labels_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
-      if !labels
-        labels_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
-        labels_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0)
-        labels_tokens << PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0)
-        labels_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
-        labels_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
-      end
-      labels_tokens.reverse.each do |t|
-        add_token(index, t)
-      end
+      contacts_tokens = [
+        PuppetLint::Lexer::Token.new(:SSTRING, 'contacts', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(contacts_type, contacts, 0, 0),
+        PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
+      ]
+      add_to_labels(problem, contacts_tokens)
     elsif problem[:token].value == 'occurrences'
       occurrences = false
       occurrences_value = nil
@@ -200,5 +159,55 @@ PuppetLint.new_check(:sensuclassic_check) do
       end
     end
     problem[:token].raw = problem[:token].value unless problem[:token].raw.nil?
+  end
+
+  def add_to_labels(problem, param_tokens)
+    index = 0
+    indent = ''
+    labels = false
+    problem[:tokens].each do |t|
+      if t.type == :NAME && ['labels','custom'].include?(t.value)
+        labels = true
+      end
+      if labels && t.type == :RBRACE
+        break
+      end
+      if labels && t.type == :LBRACE
+        index = tokens.index(t.next_token)
+        indent = t.next_token.next_token.value
+      end
+    end
+    if !labels
+      indent = problem[:tokens].last.prev_token.value + '  '
+      index = tokens.index(problem[:tokens].last.prev_token)
+      labels_tokens = [
+        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
+        PuppetLint::Lexer::Token.new(:NAME, 'labels', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:LBRACE, '{', 0, 0),
+        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+        PuppetLint::Lexer::Token.new(:INDENT, indent + '  ', 0, 0),
+      ]
+    else
+      labels_tokens = [
+        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
+      ]
+    end
+    param_tokens.each do |t|
+      labels_tokens << t
+    end
+    if !labels
+      labels_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+      labels_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0)
+      labels_tokens << PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0)
+      labels_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
+      labels_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+    end
+    labels_tokens.reverse.each do |t|
+      add_token(index, t)
+    end
   end
 end
