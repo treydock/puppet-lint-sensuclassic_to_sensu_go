@@ -27,6 +27,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         :line    => i[:type].line,
         :column  => i[:type].column,
         :token   => i[:type],
+        :tokens  => i[:tokens],
       }
       i[:param_tokens].each do |t|
         if CHECK_PARAMS.key?(t.value)
@@ -69,16 +70,25 @@ PuppetLint.new_check(:sensuclassic_check) do
               :tokens   => i[:tokens],
             }
           end
+          if t.type == :NAME && t.value == 'hooks'
+            notify :warning, {
+              :message => 'Found sensuclassic::check with hooks defined',
+              :line    => t.line,
+              :column  => t.column,
+              :token   => t,
+              :tokens  => i[:tokens],
+            }
+          end
         end
       end
     end
   end
 
   def fix(problem)
-    # Replace resource type
+    # CASE: Replace resource type
     if problem[:token].value == 'sensuclassic::check'
       problem[:token].value = 'sensu_check'
-    # Replace ::: token substitition with {{ or }} Senso Go token substitution
+    # CASE: Replace ::: token substitition with {{ or }} Senso Go token substitution
     elsif problem[:message] =~ /token substitution/
       values = []
       problem[:token].value.split(/(?=:::)/).each_with_index do |v,i|
@@ -93,7 +103,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         values << newv
       end
       problem[:token].value = values.join
-    # Handle client_attributes Hash to become entity_attributes Array
+    # CASE: Handle client_attributes Hash to become entity_attributes Array
     elsif problem[:token].value == 'client_attributes'
       problem[:token].value = 'entity_attributes'
       token = problem[:token]
@@ -142,7 +152,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         add_token(index, PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0))
         add_token(index, PuppetLint::Lexer::Token.new(:STRING, e, 0, 0))
       end
-    # Regular parameter replacements or deletes
+    # CASE: Regular parameter replacements or deletes
     elsif CHECK_PARAMS.key?(problem[:token].value) && CHECK_PARAMS[problem[:token].value].is_a?(String)
       param = problem[:token].value
       newparam = CHECK_PARAMS[param]
@@ -167,6 +177,7 @@ PuppetLint.new_check(:sensuclassic_check) do
           end
         end
       end
+    # CASE: Handle contacts to contacts label
     elsif problem[:token].value == 'contacts'
       contacts = ""
       contacts_type = :SSTRING
@@ -212,6 +223,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
       ]
       add_to_labels(problem, contacts_tokens)
+    # CASE: Handle occurrences to annotation
     elsif problem[:token].value == 'occurrences'
       occurrences = false
       occurrences_value = nil
