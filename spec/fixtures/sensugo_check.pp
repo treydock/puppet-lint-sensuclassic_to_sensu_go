@@ -38,4 +38,8 @@ class test {
       'contacts' => "foo@bar, foo@baz, ${contact}, ${contact}@domain",
     },
   }
+
+  sensu_check { 'check_disk_usage':
+    command => 'check-disk-usage.rb -w {{disk.warning | default 80}} -c {{disk.critical | default 90}}',
+  }
 }

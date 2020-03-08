@@ -45,4 +45,8 @@ class test {
     command  => '/opt/sensu/embedded/bin/check-memory.rb',
     contacts => ['foo@bar','foo@baz', $contact, "${contact}@domain"],
   }
+
+  sensuclassic::check { 'check_disk_usage':
+    command => 'check-disk-usage.rb -w :::disk.warning|80::: -c :::disk.critical|90:::',
+  }
 }

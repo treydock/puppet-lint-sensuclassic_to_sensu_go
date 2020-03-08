@@ -24,10 +24,14 @@ PuppetLint.new_check(:sensuclassic_check) do
         found_check[:token] = i[:type]
         found_check[:params] = i[:param_tokens]
         found_check[:tokens] = i[:tokens]
-        # Handle special case with how 'type' property is seen
+        found_check[:tokensubs] = []
         i[:tokens].each do |t|
+          # Handle special case with how 'type' property is seen
           if t.type == :TYPE && t.value == 'type'
             found_check[:params] << t
+          end
+          if [:STRING,:SSTRING].include?(t.type) && t.value =~ /:::/
+            found_check[:tokensubs] << t
           end
         end
         found_checks << found_check
@@ -52,12 +56,35 @@ PuppetLint.new_check(:sensuclassic_check) do
           }
         end
       end
+      c[:tokensubs].each do |s|
+        notify :warning, {
+          :message  => "Found sensuclassic token substitution",
+          :line     => s.line,
+          :column   => s.column,
+          :token    => s,
+          :tokens   => c[:tokens],
+        }
+      end
     end
   end
 
   def fix(problem)
     if problem[:token].value == 'sensuclassic::check'
       problem[:token].value = 'sensu_check'
+    elsif problem[:message] =~ /token substitution/
+      values = []
+      problem[:token].value.split(/(?=:::)/).each_with_index do |v,i|
+        if i.odd?
+          newv = v.gsub(":::", "{{")
+        else
+          newv = v.gsub(":::", "}}")
+        end
+        if newv =~ /(\{\{)|(\}\})/
+          newv = newv.split(/( )?\|( )?/).join(' | default ')
+        end
+        values << newv
+      end
+      problem[:token].value = values.join
     elsif CHECK_PARAMS.key?(problem[:token].value) && CHECK_PARAMS[problem[:token].value].is_a?(String)
       if CHECK_PARAMS[problem[:token].value] == 'delete'
         problem[:tokens].each do |t|
