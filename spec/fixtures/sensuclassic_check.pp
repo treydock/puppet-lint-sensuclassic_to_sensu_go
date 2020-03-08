@@ -39,4 +39,10 @@ class test {
 #    proxy_requests      => 
 #    hooks               => 
   }
+
+  sensuclassic::check { 'check_mem':
+    ensure   => present,
+    command  => '/opt/sensu/embedded/bin/check-memory.rb',
+    contacts => ['foo@bar','foo@baz', $contact, "${contact}@domain"],
+  }
 }

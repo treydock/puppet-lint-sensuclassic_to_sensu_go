@@ -30,4 +30,12 @@ class test {
       'fatigue_check/occurrences' => 2,
     },
   }
+
+  sensu_check { 'check_mem':
+    ensure   => present,
+    command  => '/opt/sensu/embedded/bin/check-memory.rb',
+    labels => {
+      'contacts' => "foo@bar, foo@baz, ${contact}, ${contact}@domain",
+    },
+  }
 }
