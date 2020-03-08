@@ -26,5 +26,8 @@ class test {
     subdue              => undef,
 #    proxy_requests      => 
 #    hooks               => 
+    annotations => {
+      'fatigue_check/occurrences' => 2,
+    },
   }
 }

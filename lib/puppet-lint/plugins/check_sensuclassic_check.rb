@@ -4,7 +4,7 @@ PuppetLint.new_check(:sensuclassic_check) do
     'contacts'  => nil,
     'standalone'  => 'delete',
     'type'      => 'delete',
-    'occurrences' => 'delete',
+    'occurrences' => nil,
     'refresh' => 'delete',
     'source'  => 'delete',
     'aggregate' => 'delete',
@@ -130,6 +130,50 @@ PuppetLint.new_check(:sensuclassic_check) do
       contacts_tokens << PuppetLint::Lexer::Token.new(contacts_type, contacts, 0, 0)
       contacts_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
       contacts_tokens.reverse.each do |t|
+        add_token(index, t)
+      end
+    elsif problem[:token].value == 'occurrences'
+      occurrences = false
+      occurrences_value = nil
+      problem[:tokens].each do |t|
+        if t.type == :NAME && t.value == 'occurrences'
+          occurrences = true
+        end
+        if occurrences && t.type == :NUMBER
+          occurrences_value = t.value
+          break
+        end
+      end
+      # Remove occurrences line
+      problem[:tokens].each do |t|
+        if t.line == problem[:token].line
+          remove_token(t)
+        end
+      end
+      indent = problem[:tokens].last.prev_token.value + '  '
+      index = tokens.index(problem[:tokens].last.prev_token)
+      annotations_tokens = [
+        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
+        PuppetLint::Lexer::Token.new(:NAME, 'annotations', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:LBRACE, '{', 0, 0),
+        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+        PuppetLint::Lexer::Token.new(:INDENT, indent + '  ', 0, 0),
+        PuppetLint::Lexer::Token.new(:SSTRING, 'fatigue_check/occurrences', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:NUMBER, occurrences_value, 0, 0),
+        PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
+        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
+        PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0),
+        PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
+        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+      ]
+      annotations_tokens.reverse.each do |t|
         add_token(index, t)
       end
     end
