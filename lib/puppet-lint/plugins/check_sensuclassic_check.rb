@@ -2,6 +2,7 @@ PuppetLint.new_check(:sensuclassic_check) do
   CHECK_PARAMS = {
     'custom'    => 'labels',
     'subscribers' => 'subscriptions',
+    'hooks' => nil,
     'contacts'  => nil,
     'occurrences' => nil,
     'standalone'  => 'delete',
@@ -251,6 +252,73 @@ PuppetLint.new_check(:sensuclassic_check) do
         PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
       ]
       add_to_annotations(problem, occurrences_tokens)
+    # CASE: Handle hooks reformat
+    elsif ['hooks', 'check_hooks'].include?(problem[:token].value)
+      problem[:token].value = 'check_hooks'
+      check_name = problem[:tokens][0].prev_token.value
+      found_hooks = {}
+      hooks = false
+      hookname = nil
+      brackets = nil
+      delete = false
+      problem[:tokens].each do |t|
+        if t.type == :NAME && t.value == 'check_hooks'
+          hooks = true
+        end
+        if hooks && t.type == :LBRACE
+          if brackets.nil?
+            brackets = 1
+          else
+            brackets += 1
+          end
+          t.type = :LBRACK
+          t.value = '['
+          if brackets > 1
+            index = tokens.index(t.next_token)
+            #add_token(index, PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0))
+            #add_token(index, PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0))
+            add_token(index, PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0))
+            add_token(index, PuppetLint::Lexer::Token.new(:RBRACK, ']', 0, 0))
+            add_token(index, PuppetLint::Lexer::Token.new(:SSTRING, hookname, 0, 0))
+          end
+          if brackets.even?
+            delete = true
+          end
+          next
+        end
+        if hooks && t.type == :RBRACE
+          brackets -= 1
+          hookname = nil
+          if brackets == 0
+            t.type = :RBRACK
+            t.value = ']'
+            break
+          end
+          delete = false
+          next
+        end
+        if hooks && brackets && [:STRING,:SSTRING].include?(t.type) && hookname.nil?
+          hookname = "#{t.value}-#{check_name}"
+          found_hooks[hookname] = {}
+          index = tokens.index(t)
+          add_token(index, PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0))
+          add_token(index, PuppetLint::Lexer::Token.new(:LBRACE, '{', 0, 0))
+          next
+        end
+        if hookname && [:STRING,:SSTRING, :NUMBER, :TRUE, :FALSE].include?(t.type)
+          if t.next_token.next_token.type == :FARROW
+            key = t.value
+          else
+            found_hooks[hookname][key] = t
+          end
+        end
+        if hookname && delete
+          remove_token(t)
+        end
+      end
+      found_hooks.each_pair do |name, params|
+        add_hook(problem, name, params)
+      end
     end
     problem[:token].raw = problem[:token].value unless problem[:token].raw.nil?
   end
@@ -349,6 +417,41 @@ PuppetLint.new_check(:sensuclassic_check) do
     annotations_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
     annotations_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
     annotations_tokens.reverse.each do |t|
+      add_token(index, t)
+    end
+  end
+
+  def add_hook(problem, name, params)
+    index = tokens.index(problem[:tokens].last.next_token)
+    indent = problem[:tokens].last.prev_token.value
+    hook_tokens = [
+      PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+      PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+      PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
+      PuppetLint::Lexer::Token.new(:NAME, 'sensu_hook', 0, 0),
+      PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+      PuppetLint::Lexer::Token.new(:LBRACE, '{', 0, 0),
+      PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+      PuppetLint::Lexer::Token.new(:SSTRING, name, 0, 0),
+      PuppetLint::Lexer::Token.new(:COLON, ':', 0, 0),
+      PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+    ]
+    params = {'ensure' => PuppetLint::Lexer::Token.new(:SSTRING, 'present', 0, 0)}.merge(params)
+    maxparam = params.max_by { |k,v| v.value }[0]
+    params.each_pair do |k,v|
+      whitespace = (maxparam.size - k.size) + 1
+      hook_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent + '  ', 0, 0)
+      hook_tokens << PuppetLint::Lexer::Token.new(:NAME, k, 0, 0)
+      hook_tokens << PuppetLint::Lexer::Token.new(:WHITESPACE, ' ' * whitespace, 0, 0)
+      hook_tokens << PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0)
+      hook_tokens << PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0)
+      hook_tokens << v
+      hook_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
+      hook_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+    end
+    hook_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0)
+    hook_tokens << PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0)
+    hook_tokens.reverse.each do |t|
       add_token(index, t)
     end
   end

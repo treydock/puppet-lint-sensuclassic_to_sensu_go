@@ -60,4 +60,16 @@ class test {
       'splay_coverage'    => 90,
     },
   }
+
+  sensuclassic::check { 'check_cpu_hook':
+    ensure  => present,
+    command => '/opt/sensu/embedded/bin/check-cpu.rb',
+    hooks   => {
+      'non-zero' => {
+        'command' => 'ps aux',
+        'timeout' => 10,
+        'stdin'   => false,
+      },
+    },
+  }
 }
