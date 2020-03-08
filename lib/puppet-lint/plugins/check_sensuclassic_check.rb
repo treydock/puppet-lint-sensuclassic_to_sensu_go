@@ -25,13 +25,19 @@ PuppetLint.new_check(:sensuclassic_check) do
         found_check[:params] = i[:param_tokens]
         found_check[:tokens] = i[:tokens]
         found_check[:tokensubs] = []
+        found_check[:keys] = []
         i[:tokens].each do |t|
           # Handle special case with how 'type' property is seen
           if t.type == :TYPE && t.value == 'type'
             found_check[:params] << t
           end
-          if [:STRING,:SSTRING].include?(t.type) && t.value =~ /:::/
-            found_check[:tokensubs] << t
+          if [:STRING,:SSTRING].include?(t.type)
+            if t.value =~ /:::/
+              found_check[:tokensubs] << t
+            end
+            if t.value == 'client_attributes'
+              found_check[:keys] << t
+            end
           end
         end
         found_checks << found_check
@@ -65,12 +71,23 @@ PuppetLint.new_check(:sensuclassic_check) do
           :tokens   => c[:tokens],
         }
       end
+      c[:keys].each do |s|
+        notify :warning, {
+          :message  => "Found sensuclassic hash key '#{s.value}'",
+          :line     => s.line,
+          :column   => s.column,
+          :token    => s,
+          :tokens   => c[:tokens],
+        }
+      end
     end
   end
 
   def fix(problem)
+    # Replace resource type
     if problem[:token].value == 'sensuclassic::check'
       problem[:token].value = 'sensu_check'
+    # Replace ::: token substitition with {{ or }} Senso Go token substitution
     elsif problem[:message] =~ /token substitution/
       values = []
       problem[:token].value.split(/(?=:::)/).each_with_index do |v,i|
@@ -85,6 +102,55 @@ PuppetLint.new_check(:sensuclassic_check) do
         values << newv
       end
       problem[:token].value = values.join
+    elsif problem[:token].value == 'client_attributes'
+      problem[:token].value = 'entity_attributes'
+      token = problem[:token]
+      client_attributes = false
+      entity_attributes = []
+      removeline = nil
+      startremove = nil
+      endremove = nil
+      index = nil
+      while true
+        token = token.next_token
+        if token.type == :LBRACE
+          client_attributes = true
+          token.type = :LBRACK
+          token.value = '['
+          next
+        end
+        if token.type == :RBRACE
+          token.type = :RBRACK
+          token.value = ']'
+          break
+        end
+        if client_attributes && [:STRING,:SSTRING].include?(token.type)
+          if token.next_token.next_token.type == :FARROW
+            key = token.value
+            removeline = token.line
+            startremove = token.column
+            index = tokens.index(token)
+          else
+            attr = "entity.labels.#{key} == '#{token.value}'"
+            entity_attributes << attr
+            endremove = token.column
+          end
+        end
+      end
+      # Remove previous values
+      problem[:tokens].each do |t|
+        if t.line == removeline && t.column >= startremove
+          remove_token(t)
+        end
+        if t.line >= removeline && t.column > endremove
+          break
+        end
+      end
+      entity_attributes.each do |e|
+        add_token(index, PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0))
+        add_token(index, PuppetLint::Lexer::Token.new(:STRING, e, 0, 0))
+      end
+    # Regular parameter replacements or deletes
     elsif CHECK_PARAMS.key?(problem[:token].value) && CHECK_PARAMS[problem[:token].value].is_a?(String)
       if CHECK_PARAMS[problem[:token].value] == 'delete'
         problem[:tokens].each do |t|

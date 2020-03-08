@@ -42,4 +42,16 @@ class test {
   sensu_check { 'check_disk_usage':
     command => 'check-disk-usage.rb -w {{disk.warning | default 80}} -c {{disk.critical | default 90}}',
   }
+
+  sensu_check { 'proxy':
+    ensure         => 'present',
+    command        => 'foo',
+    proxy_requests => {
+      'entity_attributes' => [
+        "entity.labels.device_type == 'router'",
+      ],
+      'splay'             => false,
+      'splay_coverage'    => 90,
+    },
+  }
 }

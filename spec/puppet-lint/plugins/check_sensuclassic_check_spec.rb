@@ -8,7 +8,7 @@ describe 'sensuclassic_check' do
   context 'with fix disabled' do
     context 'code ending with an extra newline' do
       it 'should detect a single problem' do
-        expect(problems).to have(19).problem
+        expect(problems).to have(21).problem
       end
 
       it 'should create a warning' do
@@ -34,7 +34,7 @@ describe 'sensuclassic_check' do
 
     context 'code ending with an extra newline' do
       it 'should only detect a single problem' do
-        expect(problems).to have(19).problem
+        expect(problems).to have(21).problem
       end
 
       it 'should fix the problem' do

@@ -49,4 +49,16 @@ class test {
   sensuclassic::check { 'check_disk_usage':
     command => 'check-disk-usage.rb -w :::disk.warning|80::: -c :::disk.critical|90:::',
   }
+
+  sensuclassic::check { 'proxy':
+    ensure         => 'present',
+    command        => 'foo',
+    proxy_requests => {
+      'client_attributes' => {
+        'device_type' => 'router',
+      },
+      'splay'             => false,
+      'splay_coverage'    => 90,
+    },
+  }
 }
