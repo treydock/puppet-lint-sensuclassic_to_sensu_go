@@ -36,7 +36,6 @@ class test {
     ttl_status          => 0,
     auto_resolve        => false,
     subdue              => undef,
-#    proxy_requests      => 
 #    hooks               => 
   }
 

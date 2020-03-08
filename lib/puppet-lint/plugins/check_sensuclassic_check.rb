@@ -1,10 +1,11 @@
 PuppetLint.new_check(:sensuclassic_check) do
   CHECK_PARAMS = {
     'custom'    => 'labels',
+    'subscribers' => 'subscriptions',
     'contacts'  => nil,
+    'occurrences' => nil,
     'standalone'  => 'delete',
     'type'      => 'delete',
-    'occurrences' => nil,
     'refresh' => 'delete',
     'source'  => 'delete',
     'aggregate' => 'delete',
@@ -102,6 +103,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         values << newv
       end
       problem[:token].value = values.join
+    # Handle client_attributes Hash to become entity_attributes Array
     elsif problem[:token].value == 'client_attributes'
       problem[:token].value = 'entity_attributes'
       token = problem[:token]
@@ -152,14 +154,25 @@ PuppetLint.new_check(:sensuclassic_check) do
       end
     # Regular parameter replacements or deletes
     elsif CHECK_PARAMS.key?(problem[:token].value) && CHECK_PARAMS[problem[:token].value].is_a?(String)
-      if CHECK_PARAMS[problem[:token].value] == 'delete'
+      param = problem[:token].value
+      newparam = CHECK_PARAMS[param]
+      if newparam == 'delete'
         problem[:tokens].each do |t|
           if t.line == problem[:token].line
             remove_token(t)
           end
         end
       else
-        problem[:token].value = CHECK_PARAMS[problem[:token].value]
+        problem[:token].value = newparam
+        if param.size > newparam.size
+          spaces = problem[:token].next_token.value.size
+          newspace = ' ' * (spaces + (param.size - newparam.size))
+          problem[:token].next_token.value = newspace
+        elsif newparam.size > param.size
+          spaces = problem[:token].next_token.value.size
+          newspace = ' ' * (spaces - (newparam.size - param.size))
+          problem[:token].next_token.value = newspace
+        end
       end
     elsif problem[:token].value == 'contacts'
       contacts = ""

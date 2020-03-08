@@ -8,17 +8,17 @@ describe 'sensuclassic_check' do
   context 'with fix disabled' do
     context 'code ending with an extra newline' do
       it 'should detect a single problem' do
-        expect(problems).to have(21).problem
+        expect(problems).to have(22).problem
       end
 
       it 'should create a warning' do
         expect(problems).to contain_warning(msg).on_line(9).in_column(3)
-        expect(problems).to contain_warning(msg).on_line(43).in_column(3)
+        expect(problems).to contain_warning(msg).on_line(42).in_column(3)
       end
 
       it 'should create warning for token' do
         msg = 'Found sensuclassic token substitution'
-        expect(problems).to contain_warning(msg).on_line(50).in_column(16)
+        expect(problems).to contain_warning(msg).on_line(49).in_column(16)
       end
     end
   end
@@ -34,7 +34,7 @@ describe 'sensuclassic_check' do
 
     context 'code ending with an extra newline' do
       it 'should only detect a single problem' do
-        expect(problems).to have(21).problem
+        expect(problems).to have(22).problem
       end
 
       it 'should fix the problem' do
