@@ -131,32 +131,15 @@ PuppetLint.new_check(:sensuclassic_check) do
           remove_token(t)
         end
       end
-      indent = problem[:tokens].last.prev_token.value + '  '
-      index = tokens.index(problem[:tokens].last.prev_token)
-      annotations_tokens = [
-        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
-        PuppetLint::Lexer::Token.new(:NAME, 'annotations', 0, 0),
-        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
-        PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
-        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
-        PuppetLint::Lexer::Token.new(:LBRACE, '{', 0, 0),
-        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
-        PuppetLint::Lexer::Token.new(:INDENT, indent + '  ', 0, 0),
+      occurrences_tokens = [
         PuppetLint::Lexer::Token.new(:SSTRING, 'fatigue_check/occurrences', 0, 0),
         PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
         PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
         PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
         PuppetLint::Lexer::Token.new(:NUMBER, occurrences_value, 0, 0),
         PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
-        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
-        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
-        PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0),
-        PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
-        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
       ]
-      annotations_tokens.reverse.each do |t|
-        add_token(index, t)
-      end
+      add_to_annotations(problem, occurrences_tokens)
     end
     problem[:token].raw = problem[:token].value unless problem[:token].raw.nil?
   end
@@ -207,6 +190,54 @@ PuppetLint.new_check(:sensuclassic_check) do
       labels_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
     end
     labels_tokens.reverse.each do |t|
+      add_token(index, t)
+    end
+  end
+
+  def add_to_annotations(problem, param_tokens)
+    index = 0
+    indent = ''
+    annotations = false
+    problem[:tokens].each do |t|
+      if t.type == :NAME && t.value == 'annotations'
+        annotations = true
+      end
+      if annotations && t.type == :RBRACE
+        break
+      end
+      if annotations && t.type == :LBRACE
+        index = tokens.index(t.next_token)
+        indent = t.next_token.next_token.value
+      end
+    end
+    if !annotations
+      indent = problem[:tokens].last.prev_token.value + '  '
+      index = tokens.index(problem[:tokens].last.prev_token)
+      annotations_tokens = [
+        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
+        PuppetLint::Lexer::Token.new(:NAME, 'annotations', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:LBRACE, '{', 0, 0),
+        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+        PuppetLint::Lexer::Token.new(:INDENT, indent + '  ', 0, 0),
+      ]
+    else
+      annotations_tokens = [
+        PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
+        PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),
+      ]
+    end
+    param_tokens.each do |t|
+      annotations_tokens << t
+    end
+    annotations_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+    annotations_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0)
+    annotations_tokens << PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0)
+    annotations_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
+    annotations_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+    annotations_tokens.reverse.each do |t|
       add_token(index, t)
     end
   end
