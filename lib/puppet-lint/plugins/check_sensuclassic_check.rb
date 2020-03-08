@@ -18,68 +18,58 @@ PuppetLint.new_check(:sensuclassic_check) do
   }
 
   def check
-    found_checks = []
     resource_indexes.each do |i|
-      if i[:type].type == :NAME && i[:type].value == 'sensuclassic::check'
-        found_check = {}
-        found_check[:token] = i[:type]
-        found_check[:params] = i[:param_tokens]
-        found_check[:tokens] = i[:tokens]
-        found_check[:tokensubs] = []
-        found_check[:keys] = []
-        i[:tokens].each do |t|
-          # Handle special case with how 'type' property is seen
-          if t.type == :TYPE && t.value == 'type'
-            found_check[:params] << t
-          end
-          if [:STRING,:SSTRING].include?(t.type)
-            if t.value =~ /:::/
-              found_check[:tokensubs] << t
-            end
-            if t.value == 'client_attributes'
-              found_check[:keys] << t
-            end
-          end
-        end
-        found_checks << found_check
+      if i[:type].type != :NAME && i[:type].value != 'sensuclassic::check'
+        next
       end
-    end
-
-    found_checks.each do |c|
       notify :warning, {
         :message => 'Found sensuclassic::check',
-        :line    => c[:token].line,
-        :column  => c[:token].column,
-        :token   => c[:token],
+        :line    => i[:type].line,
+        :column  => i[:type].column,
+        :token   => i[:type],
       }
-      c[:params].each do |p|
-        if CHECK_PARAMS.key?(p.value)
+      i[:param_tokens].each do |t|
+        if CHECK_PARAMS.key?(t.value)
           notify :warning, {
-            :message  => "Found sensuclassic::chek param #{p.value}",
-            :line     => p.line,
-            :column   => p.column,
-            :token    => p,
-            :tokens   => c[:tokens],
+            :message  => "Found sensuclassic::chek param #{t.value}",
+            :line     => t.line,
+            :column   => t.column,
+            :token    => t,
+            :tokens   => i[:tokens],
           }
         end
       end
-      c[:tokensubs].each do |s|
-        notify :warning, {
-          :message  => "Found sensuclassic token substitution",
-          :line     => s.line,
-          :column   => s.column,
-          :token    => s,
-          :tokens   => c[:tokens],
-        }
-      end
-      c[:keys].each do |s|
-        notify :warning, {
-          :message  => "Found sensuclassic hash key '#{s.value}'",
-          :line     => s.line,
-          :column   => s.column,
-          :token    => s,
-          :tokens   => c[:tokens],
-        }
+      i[:tokens].each do |t|
+        # Handle special case with how 'type' property is seen
+        if t.type == :TYPE && t.value == 'type'
+          notify :warning, {
+            :message  => "Found sensuclassic::chek param #{t.value}",
+            :line     => t.line,
+            :column   => t.column,
+            :token    => t,
+            :tokens   => i[:tokens],
+          }
+        end
+        if [:STRING,:SSTRING].include?(t.type)
+          if t.value =~ /:::/
+            notify :warning, {
+              :message  => "Found sensuclassic token substitution",
+              :line     => t.line,
+              :column   => t.column,
+              :token    => t,
+              :tokens   => i[:tokens],
+            }
+          end
+          if t.value == 'client_attributes'
+            notify :warning, {
+              :message  => "Found sensuclassic hash key '#{t.value}'",
+              :line     => t.line,
+              :column   => t.column,
+              :token    => t,
+              :tokens   => i[:tokens],
+            }
+          end
+        end
       end
     end
   end
@@ -170,8 +160,11 @@ PuppetLint.new_check(:sensuclassic_check) do
           problem[:token].next_token.value = newspace
         elsif newparam.size > param.size
           spaces = problem[:token].next_token.value.size
-          newspace = ' ' * (spaces - (newparam.size - param.size))
-          problem[:token].next_token.value = newspace
+          newspaces = spaces - (newparam.size - param.size)
+          if newspaces > 0
+            newspace = ' ' * newspaces
+            problem[:token].next_token.value = newspace
+          end
         end
       end
     elsif problem[:token].value == 'contacts'
