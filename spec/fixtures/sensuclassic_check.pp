@@ -72,4 +72,21 @@ class test {
       },
     },
   }
+
+  sensuclassic::check { 'check_mem_hook':
+    ensure  => present,
+    command => '/opt/sensu/embedded/bin/check-memory.rb',
+    hooks   => {
+      'non-zero' => {
+        'command' => 'ps aux',
+        'timeout' => 10,
+        'stdin'   => false,
+      },
+      'unknown' => {
+        'command' => '/dne',
+        'timeout' => 5,
+        'stdin'   => true,
+      },
+    },
+  }
 }

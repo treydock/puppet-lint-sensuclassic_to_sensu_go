@@ -316,7 +316,7 @@ PuppetLint.new_check(:sensuclassic_check) do
           remove_token(t)
         end
       end
-      found_hooks.each_pair do |name, params|
+      found_hooks.reverse_each do |name, params|
         add_hook(problem, name, params)
       end
     end
@@ -437,9 +437,12 @@ PuppetLint.new_check(:sensuclassic_check) do
       PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0),
     ]
     params = {'ensure' => PuppetLint::Lexer::Token.new(:SSTRING, 'present', 0, 0)}.merge(params)
-    maxparam = params.max_by { |k,v| v.value }[0]
+    maxparam = params.max_by { |k,v| k }[0]
     params.each_pair do |k,v|
       whitespace = (maxparam.size - k.size) + 1
+      if whitespace < 1
+        whitespace = 1
+      end
       hook_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent + '  ', 0, 0)
       hook_tokens << PuppetLint::Lexer::Token.new(:NAME, k, 0, 0)
       hook_tokens << PuppetLint::Lexer::Token.new(:WHITESPACE, ' ' * whitespace, 0, 0)

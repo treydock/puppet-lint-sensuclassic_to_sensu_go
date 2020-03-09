@@ -68,4 +68,27 @@ class test {
     timeout => 10,
     stdin   => false,
   }
+
+  sensu_check { 'check_mem_hook':
+    ensure  => present,
+    command => '/opt/sensu/embedded/bin/check-memory.rb',
+    check_hooks   => [
+      { 'non-zero' => ['non-zero-check_mem_hook'] },
+      { 'unknown' => ['unknown-check_mem_hook'] },
+    ],
+  }
+
+  sensu_hook { 'non-zero-check_mem_hook':
+    ensure  => 'present',
+    command => 'ps aux',
+    timeout => 10,
+    stdin   => false,
+  }
+
+  sensu_hook { 'unknown-check_mem_hook':
+    ensure  => 'present',
+    command => '/dne',
+    timeout => 5,
+    stdin   => true,
+  }
 }
