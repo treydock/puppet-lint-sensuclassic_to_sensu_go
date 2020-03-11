@@ -6,6 +6,11 @@ class test {
 
   $contact = 'foo'
 
+  sensuclassic_check { 'check_mem_type':
+    ensure   => present,
+    command  => '/opt/sensu/embedded/bin/check-memory.rb',
+  }
+
   sensuclassic::check { 'check_cpu':
     ensure              => present,
     command             => '/opt/sensu/embedded/bin/check-cpu.rb',

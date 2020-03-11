@@ -20,11 +20,11 @@ PuppetLint.new_check(:sensuclassic_check) do
 
   def check
     resource_indexes.each do |i|
-      if i[:type].type != :NAME && i[:type].value != 'sensuclassic::check'
+      if i[:type].type != :NAME || !['sensuclassic_check', 'sensuclassic::check'].include?(i[:type].value)
         next
       end
       notify :warning, {
-        :message => 'Found sensuclassic::check',
+        :message => "Found #{i[:type].value}",
         :line    => i[:type].line,
         :column  => i[:type].column,
         :token   => i[:type],
@@ -33,7 +33,7 @@ PuppetLint.new_check(:sensuclassic_check) do
       i[:param_tokens].each do |t|
         if CHECK_PARAMS.key?(t.value)
           notify :warning, {
-            :message  => "Found sensuclassic::chek param #{t.value}",
+            :message  => "Found #{i[:type].value} param #{t.value}",
             :line     => t.line,
             :column   => t.column,
             :token    => t,
@@ -45,7 +45,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         # Handle special case with how 'type' property is seen
         if t.type == :TYPE && t.value == 'type'
           notify :warning, {
-            :message  => "Found sensuclassic::chek param #{t.value}",
+            :message  => "Found #{i[:type]} param #{t.value}",
             :line     => t.line,
             :column   => t.column,
             :token    => t,
@@ -73,7 +73,7 @@ PuppetLint.new_check(:sensuclassic_check) do
           end
           if t.type == :NAME && t.value == 'hooks'
             notify :warning, {
-              :message => 'Found sensuclassic::check with hooks defined',
+              :message => "Found #{i[:type].value} with hooks defined",
               :line    => t.line,
               :column  => t.column,
               :token   => t,
@@ -87,7 +87,7 @@ PuppetLint.new_check(:sensuclassic_check) do
 
   def fix(problem)
     # CASE: Replace resource type
-    if problem[:token].value == 'sensuclassic::check'
+    if ['sensuclassic::check', 'sensuclassic_check'].include?(problem[:token].value)
       problem[:token].value = 'sensu_check'
     # CASE: Replace ::: token substitition with {{ or }} Senso Go token substitution
     elsif problem[:message] =~ /token substitution/

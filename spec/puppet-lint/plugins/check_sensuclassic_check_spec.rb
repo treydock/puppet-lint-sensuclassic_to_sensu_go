@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe 'sensuclassic_check' do
-  let(:msg) { 'Found sensuclassic::check' }
   let(:code) { read_fixture('sensuclassic_check.pp') }
   let(:fixed) { read_fixture('sensugo_check.pp') }
 
@@ -12,13 +11,13 @@ describe 'sensuclassic_check' do
       end
 
       it 'should create a warning' do
-        expect(problems).to contain_warning(msg).on_line(9).in_column(3)
-        expect(problems).to contain_warning(msg).on_line(42).in_column(3)
+        expect(problems).to contain_warning('Found sensuclassic_check').on_line(9).in_column(3)
+        expect(problems).to contain_warning('Found sensuclassic::check').on_line(14).in_column(3)
       end
 
       it 'should create warning for token' do
         msg = 'Found sensuclassic token substitution'
-        expect(problems).to contain_warning(msg).on_line(49).in_column(16)
+        expect(problems).to contain_warning(msg).on_line(54).in_column(16)
       end
     end
   end
@@ -38,7 +37,7 @@ describe 'sensuclassic_check' do
       end
 
       it 'should fix the problem' do
-        expect(problems).to contain_fixed(msg).on_line(9).in_column(3)
+        expect(problems).to contain_fixed('Found sensuclassic::check').on_line(14).in_column(3)
       end
 
       it 'should add a newline to the end of the manifest' do
