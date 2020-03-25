@@ -26,7 +26,7 @@ class test {
     interval            => 60,
     occurrences         => 2,
     refresh             => 20,
-    source              => '/dne',
+    source              => 'entity',
     subscribers         => ['base','linux'],
     low_flap_threshold  => 0,
     high_flap_threshold => 0,

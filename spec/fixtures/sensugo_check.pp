@@ -22,6 +22,7 @@ class test {
     handlers            => ['foo','bar'],
     cron                => '0 0 * * *',
     interval            => 60,
+    proxy_entity_name   => 'entity',
     subscriptions       => ['base','linux'],
     low_flap_threshold  => 0,
     high_flap_threshold => 0,
