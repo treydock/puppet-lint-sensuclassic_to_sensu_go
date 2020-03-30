@@ -99,7 +99,7 @@ PuppetLint.new_check(:sensuclassic_check) do
           newv = v.gsub(":::", "}}")
         end
         if newv =~ /(\{\{)|(\}\})/
-          newv = newv.split(/( )?\|( )?/).join(' | default ')
+          newv = newv.split(/( )?\|/).join(' | default ')
         end
         values << newv
       end
