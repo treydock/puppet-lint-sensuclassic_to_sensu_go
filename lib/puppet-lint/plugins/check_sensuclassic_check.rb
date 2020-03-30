@@ -391,6 +391,16 @@ PuppetLint.new_check(:sensuclassic_check) do
     end
     if !annotations
       indent = problem[:tokens].last.prev_token.value + '  '
+      last = problem[:tokens].last
+      while ! last.nil?
+        last = last.prev_token
+        if last.type == :NEWLINE
+          if last.prev_token.type != :COMMA
+            add_token(tokens.index(last), PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0))
+          end
+          break
+        end
+      end
       index = tokens.index(problem[:tokens].last.prev_token)
       annotations_tokens = [
         PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0),

@@ -30,7 +30,6 @@ class test {
     publish             => true,
     ttl                 => 20,
     subdue              => undef,
-#    hooks               => 
     annotations => {
       'fatigue_check/occurrences' => 2,
     },

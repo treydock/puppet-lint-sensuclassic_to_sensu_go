@@ -17,7 +17,7 @@ describe 'sensuclassic_check' do
 
       it 'should create warning for token' do
         msg = 'Found sensuclassic token substitution'
-        expect(problems).to contain_warning(msg).on_line(54).in_column(16)
+        expect(problems).to contain_warning(msg).on_line(53).in_column(16)
       end
     end
   end

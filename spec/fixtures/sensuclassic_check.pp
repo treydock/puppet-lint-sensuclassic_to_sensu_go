@@ -40,8 +40,7 @@ class test {
     ttl                 => 20,
     ttl_status          => 0,
     auto_resolve        => false,
-    subdue              => undef,
-#    hooks               => 
+    subdue              => undef
   }
 
   sensuclassic::check { 'check_mem':
