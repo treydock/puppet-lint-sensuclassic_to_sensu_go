@@ -6,9 +6,9 @@ PuppetLint.new_check(:sensuclassic_check) do
     'hooks' => nil,
     'contacts'  => nil,
     'occurrences' => nil,
+    'refresh' => nil,
     'standalone'  => 'delete',
     'type'      => 'delete',
-    'refresh' => 'delete',
     'aggregate' => 'delete',
     'aggregates' => 'delete',
     'handle'  => 'delete',
@@ -252,6 +252,34 @@ PuppetLint.new_check(:sensuclassic_check) do
         PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
       ]
       add_to_annotations(problem, occurrences_tokens)
+    # CASE: Handle refresh to annotation
+    elsif problem[:token].value == 'refresh'
+      refresh = false
+      refresh_value = nil
+      problem[:tokens].each do |t|
+        if t.type == :NAME && t.value == 'refresh'
+          refresh = true
+        end
+        if refresh && t.type == :NUMBER
+          refresh_value = t.value
+          break
+        end
+      end
+      # Remove refresh line
+      problem[:tokens].each do |t|
+        if t.line == problem[:token].line
+          remove_token(t)
+        end
+      end
+      refresh_tokens = [
+        PuppetLint::Lexer::Token.new(:SSTRING, 'fatigue_check/interval', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
+        PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
+        PuppetLint::Lexer::Token.new(:NUMBER, refresh_value, 0, 0),
+        PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
+      ]
+      add_to_annotations(problem, refresh_tokens)
     # CASE: Handle hooks reformat
     elsif ['hooks', 'check_hooks'].include?(problem[:token].value)
       problem[:token].value = 'check_hooks'
@@ -377,7 +405,10 @@ PuppetLint.new_check(:sensuclassic_check) do
     index = 0
     indent = ''
     annotations = false
-    problem[:tokens].each do |t|
+    tokens.each do |t|
+      if t.line < problem[:tokens].first.line && t.line > problem[:tokens].last.line
+        next
+      end
       if t.type == :NAME && t.value == 'annotations'
         annotations = true
       end
@@ -421,11 +452,13 @@ PuppetLint.new_check(:sensuclassic_check) do
     param_tokens.each do |t|
       annotations_tokens << t
     end
-    annotations_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
-    annotations_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0)
-    annotations_tokens << PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0)
-    annotations_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
-    annotations_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+    if !annotations
+      annotations_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+      annotations_tokens << PuppetLint::Lexer::Token.new(:INDENT, indent, 0, 0)
+      annotations_tokens << PuppetLint::Lexer::Token.new(:RBRACE, '}', 0, 0)
+      annotations_tokens << PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0)
+      annotations_tokens << PuppetLint::Lexer::Token.new(:NEWLINE, "\n", 0, 0)
+    end
     annotations_tokens.reverse.each do |t|
       add_token(index, t)
     end

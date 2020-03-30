@@ -31,6 +31,7 @@ class test {
     ttl                 => 20,
     subdue              => undef,
     annotations => {
+      'fatigue_check/interval' => 20,
       'fatigue_check/occurrences' => 2,
     },
   }
