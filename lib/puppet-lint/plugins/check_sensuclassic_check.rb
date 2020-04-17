@@ -248,7 +248,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
         PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
         PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
-        PuppetLint::Lexer::Token.new(:NUMBER, occurrences_value, 0, 0),
+        PuppetLint::Lexer::Token.new(:SSTRING, occurrences_value, 0, 0),
         PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
       ]
       add_to_annotations(problem, occurrences_tokens)
@@ -276,7 +276,7 @@ PuppetLint.new_check(:sensuclassic_check) do
         PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
         PuppetLint::Lexer::Token.new(:FARROW, '=>', 0, 0),
         PuppetLint::Lexer::Token.new(:WHITESPACE, ' ', 0, 0),
-        PuppetLint::Lexer::Token.new(:NUMBER, refresh_value, 0, 0),
+        PuppetLint::Lexer::Token.new(:SSTRING, refresh_value, 0, 0),
         PuppetLint::Lexer::Token.new(:COMMA, ',', 0, 0),
       ]
       add_to_annotations(problem, refresh_tokens)
